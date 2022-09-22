@@ -1,12 +1,9 @@
-const createPlayer = (playerName, playerBoardPiece, isPlayerTurn) => {
+const createPlayer = (playerName, playerBoardPiece) => {
     let playerScore = null;
     const getPlayerName = () => playerName;
 
     const setPlayerScore = (value) => playerScore = value;
     const getPlayerScore = () => playerScore;
-
-    const setPlayerTurn = (value) => isPlayerTurn = value ?? !isPlayerTurn;
-    const getPlayerTurn = () => isPlayerTurn;
 
     const getPlayerBoardPiece = () => playerBoardPiece;
 
@@ -14,28 +11,32 @@ const createPlayer = (playerName, playerBoardPiece, isPlayerTurn) => {
         getPlayerName,
         setPlayerScore,
         getPlayerScore,
-        setPlayerTurn,
-        getPlayerTurn,
         getPlayerBoardPiece,
     }
 }
 
+// todo/ideas
+// make the menu a modal
+
 const gameBoard = (() => {
+    let currentTurn = null;
     // let board = ['X', 'X', 'O', 'O', 'X', 'O', 'X', 'O', 'X'];
     let board = [];
     let _players = [];
-    let _currentTurn = null;
 
-    function _addPlayer(playerName, playerBoardPiece, isPlayerTurn) {
+    function _addPlayer(playerName, playerBoardPiece) {
         if (_players.length >= 2) return;
-        _players.push(createPlayer(playerName, playerBoardPiece.toUpperCase(), isPlayerTurn));
+        _players.push(createPlayer(playerName, playerBoardPiece.toUpperCase()));
     }
 
     function createPlayers(firstPlayer, secondPlayer = 'AI') {
-        _addPlayer(firstPlayer, 'cross', true); //cross goes first
-        _addPlayer(secondPlayer, 'circle', false);
+        _addPlayer(firstPlayer, 'cross');
+        _addPlayer(secondPlayer, 'circle');
+        currentTurn = _players[0]; //cross goes first
+
         console.log(`Player 1: ${_players[0].getPlayerName()}`);
         console.log(`Player 2: ${_players[1].getPlayerName()}`);
+        console.log(currentTurn.getPlayerName());
     }
 
     function deletePlayers() {
@@ -64,6 +65,7 @@ const gameBoard = (() => {
         createBoard,
         resetBoard,
         changeBoardValue,
+        currentTurn,
         board,
         _players, //testing
     }
@@ -86,7 +88,7 @@ const displayController = (() => {
         displayBoard();
     }
 
-    // Private
+    //Private
     function _checkToggle(e) {
         e.target.checked ? e.target.form[1].disabled = true : e.target.form[1].disabled = false;
     }
@@ -119,7 +121,7 @@ const displayController = (() => {
 
     }
 
-    // Public
+    //Public
     function displayBoard() {
         let index = 0;
         gameBoard.board.forEach(value => {
@@ -144,9 +146,9 @@ const displayController = (() => {
     }
 
     return {
+        init,
         displayBoard,
         displayClearBoard,
-        init,
     }
 })();
 

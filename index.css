@@ -12,16 +12,22 @@
 }
 
 #container {
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    width: 100%;
+    margin: auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr 1fr;
     height: 100vh;
-    justify-content: space-evenly;
+    justify-items: center;
     align-items: center;
 }
 
 /* Menu */
+
+#menu-display {
+    display: flex;
+    flex-direction: column;
+    width: 50%;
+}
 
 #menu-form {
     display: flex;
@@ -29,10 +35,22 @@
     gap: 1rem;
 }
 
-#menu-form label input {
+#menu-form label {
+    display: flex;
+}
+#menu-form input[type="text"] {
+    flex: 1;
 }
 
 #menu-form button {
+    color: white;
+    background-color: black;
+    border: none;
+    padding: 1rem;
+}
+
+#current-turn {
+    margin: 1rem 0 2rem 0;
 }
 
 /* Game Board */
