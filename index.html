@@ -10,9 +10,27 @@
     </head>
     <body>
         <div id="container">
-            <div id="current-turn-display"></div>
+            <div id="menu-display">
+                <form action="javascript:(null);" method="post" id="menu-form">
+                    <label for="player-one">
+                        Player one:
+                        <input type="text" name="playerOne" id="player-one" />
+                    </label>
+                    <label for="player-two">
+                        Player two:
+                        <input type="text" name="playerTwo" id="player-two" />
+                    </label>
+                    <label for="with-ai">
+                        <input type="checkbox" name="twoPlayer" id="with-ai" />
+                        Player vs CPU
+                    </label>
+                    <button type="submit">Start Game</button>
+                </form>
+            </div>
             <div id="game-board"></div>
-            <div id="scoreboard"></div>
+            <div id="scoreboard">
+                <div class="score-grid"></div>
+            </div>
         </div>
     </body>
 </html>
