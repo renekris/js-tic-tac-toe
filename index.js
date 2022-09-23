@@ -19,6 +19,7 @@ const Player = (playerName, playerBoardPiece) => {
 // make the menu a modal
 
 const gameBoard = (() => {
+    let isGameFinished = false;
     let currentTurn = null;
     let board = [];
     let _players = [];
@@ -27,6 +28,24 @@ const gameBoard = (() => {
     function _addPlayer(playerName, playerBoardPiece) {
         if (_players.length >= 2) return;
         _players.push(Player(playerName, playerBoardPiece));
+    }
+
+    function _checkLine(startPos, stepsPos, distance = board.length) {
+        let pieceArray = [];
+        for (let i = startPos; i < startPos + distance; i += stepsPos) {
+            const element = board[i];
+            if (element !== null) {
+                pieceArray.push(element);
+            }
+        }
+        if (pieceArray.length >= 3) {
+            if (pieceArray.every(val => val === pieceArray[0])) {
+                console.log('WIN!')
+                return true;
+            } else {
+                return false;
+            }
+        }
     }
 
     //Public
@@ -40,6 +59,7 @@ const gameBoard = (() => {
     }
 
     function resetBoardAll() {
+        isGameFinished = false;
         currentTurn = null;
         board = [];
         _players = [];
@@ -62,13 +82,32 @@ const gameBoard = (() => {
     }
 
     function checkWinState() {
+        const linePatterns = [[0, 3], [1, 3], [2, 3], [0, 1, 3], [3, 1, 3], [6, 1, 3], [0, 4], [2, 2, 5]];
 
+        //// Different patterns
+        // _checkLine(0, 3); //left top -> bottom | OK
+        // _checkLine(1, 3); //mid top -> bottom | OK
+        // _checkLine(2, 3); //right top -> bottom | OK
+        // _checkLine(0, 1, 3); //top left -> top right - OK
+        // _checkLine(3, 1, 3); //mid left -> mid right - OK
+        // _checkLine(6, 1, 3); //bottom left -> bottom right - OK
+        // _checkLine(0, 4); //left top -> bottom right \ OK
+        // _checkLine(2, 2, 5); //right top -> bottom left / OK
+
+        console.clear();
+        for (let i = 0; i < linePatterns.length; i++) {
+            if (_checkLine(...linePatterns[i])) {
+                isGameFinished = true;
+                return true;
+            }
+        }
     }
 
 
     return {
         getCurrentTurn: () => { return currentTurn },
         getBoard: () => { return board },
+        getIsGameFinished: () => { return isGameFinished },
         createPlayers,
         resetBoardAll,
         changeBoardValue,
@@ -98,6 +137,7 @@ const displayController = (() => {
     //Private
     function _checkToggle(e) {
         e.target.checked ? e.target.form[1].disabled = true : e.target.form[1].disabled = false;
+        e.target.checked ? e.target.form[1].disabled = true : e.target.form[1].disabled = false;
     }
 
     function _displayTurn() {
@@ -108,16 +148,24 @@ const displayController = (() => {
     }
 
     function _clickUpdateValue(e) {
+        if (gameBoard.getIsGameFinished()) return;
         const targetIndex = e.target.parentElement.dataset.index;
         const currentPiece = gameBoard.getCurrentTurn().getPlayerBoardPiece();
         if (gameBoard.getBoard()[targetIndex] !== null) return; //avoid overwriting cells
 
         gameBoard.changeBoardValue(targetIndex, currentPiece);
 
+        displayBoard();
+        if (gameBoard.checkWinState()) {
+            _displayPlayerWin();
+            return
+        }
         gameBoard.switchCurrentTurn();
         _displayTurn();
-        displayBoard();
-        gameBoard.checkWinState();
+    }
+
+    function _displayPlayerWin() {
+        elCurrentTurn.textContent = `Winner of this game is: ${gameBoard.getCurrentTurn().getPlayerName()}!`;
     }
 
     function _menuFormSubmit(e) {
