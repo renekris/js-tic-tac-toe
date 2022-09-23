@@ -23,15 +23,17 @@ const gameBoard = (() => {
     let board = [];
     let _players = [];
 
+    //Private
     function _addPlayer(playerName, playerBoardPiece) {
         if (_players.length >= 2) return;
-        _players.push(Player(playerName, playerBoardPiece.toUpperCase()));
+        _players.push(Player(playerName, playerBoardPiece));
     }
 
+    //Public
     function createPlayers(firstPlayer, secondPlayer = 'AI') {
-        _addPlayer(firstPlayer, 'cross');
-        _addPlayer(secondPlayer, 'circle');
-        currentTurn = _players[0].getPlayerName(); //cross goes first
+        _addPlayer(firstPlayer, 'CROSS');
+        _addPlayer(secondPlayer, 'CIRCLE');
+        currentTurn = _players[0]; //CROSS or P1 goes first
 
         console.log(`Player 1: ${_players[0].getPlayerName()}`);
         console.log(`Player 2: ${_players[1].getPlayerName()}`);
@@ -51,13 +53,27 @@ const gameBoard = (() => {
         board[index] = value;
     }
 
+    function switchCurrentTurn() {
+        const playerOne = _players[0];
+        const playerTwo = _players[1];
+        currentTurn.getPlayerBoardPiece() === playerOne.getPlayerBoardPiece()
+            ? currentTurn = playerTwo
+            : currentTurn = playerOne;
+    }
+
+    function checkWinState() {
+
+    }
+
 
     return {
+        getCurrentTurn: () => { return currentTurn },
+        getBoard: () => { return board },
         createPlayers,
         resetBoardAll,
         changeBoardValue,
-        getCurrentTurn: () => { return currentTurn },
-        getBoard: () => { return board },
+        switchCurrentTurn,
+        checkWinState,
     }
 })();
 
@@ -87,26 +103,36 @@ const displayController = (() => {
     function _displayTurn() {
         elCurrentTurn.innerHTML = '';
         const p = document.createElement('p');
-        p.textContent = `${gameBoard.getCurrentTurn()}'s turn`;
+        p.textContent = `${gameBoard.getCurrentTurn().getPlayerName()}'s turn`;
         elCurrentTurn.append(p);
     }
 
     function _clickUpdateValue(e) {
         const targetIndex = e.target.parentElement.dataset.index;
-        gameBoard.changeBoardValue(targetIndex, 'cross');
+        const currentPiece = gameBoard.getCurrentTurn().getPlayerBoardPiece();
+        if (gameBoard.getBoard()[targetIndex] !== null) return; //avoid overwriting cells
 
+        gameBoard.changeBoardValue(targetIndex, currentPiece);
+
+        gameBoard.switchCurrentTurn();
+        _displayTurn();
         displayBoard();
+        gameBoard.checkWinState();
     }
 
     function _menuFormSubmit(e) {
-        if (e.target[0].value !== '' && e.target[1].value === '' && e.target[2].checked) {
+        const playerOneName = e.target[0].value;
+        const playerTwoName = e.target[1].value;
+        const cpuToggle = e.target[2].checked;
+
+        if (playerOneName !== '' && cpuToggle) {
             //with AI
             resetDisplayBoardAll(); //has to be inside so it wouldn't trigger during else condition
-            gameBoard.createPlayers(e.target[0].value);
-        } else if (e.target[0].value !== '' && e.target[1].value !== '' && !e.target[2].checked) {
+            gameBoard.createPlayers(playerOneName);
+        } else if (playerOneName !== '' && playerTwoName !== '' && !cpuToggle) {
             //without AI / PvP
             resetDisplayBoardAll();
-            gameBoard.createPlayers(e.target[0].value, e.target[1].value);
+            gameBoard.createPlayers(playerOneName, playerTwoName);
         } else {
             console.log('%cPlease enter required data', 'color:red')
             return
@@ -122,14 +148,14 @@ const displayController = (() => {
         gameBoard.getBoard().forEach(value => {
             const elMainDiv = document.createElement('div');
             const elImageDiv = document.createElement('div');
-            elImageDiv.addEventListener('pointerup', _clickUpdateValue)
-            if (value === 'cross') {
+            elImageDiv.addEventListener('pointerup', _clickUpdateValue);
+            if (value === 'CROSS') {
                 elMainDiv.classList.add('cross');
-            } else if (value === 'circle') {
+            } else if (value === 'CIRCLE') {
                 elMainDiv.classList.add('circle');
             }
             elMainDiv.dataset.index = index++;
-            elMainDiv.append(elImageDiv)
+            elMainDiv.append(elImageDiv);
             elGameBoard.append(elMainDiv);
         })
     }
