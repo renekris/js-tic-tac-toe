@@ -1,5 +1,6 @@
-const Player = (playerName, playerBoardPiece) => {
+const Player = (playerName, playerBoardPiece, isAi = false) => {
     let playerScore = null;
+
     const getPlayerName = () => playerName;
 
     const setPlayerScore = (value) => playerScore = value;
@@ -7,11 +8,14 @@ const Player = (playerName, playerBoardPiece) => {
 
     const getPlayerBoardPiece = () => playerBoardPiece;
 
+    const getIsAi = () => isAi;
+
     return {
         getPlayerName,
         setPlayerScore,
         getPlayerScore,
         getPlayerBoardPiece,
+        getIsAi,
     }
 }
 
@@ -20,14 +24,15 @@ const Player = (playerName, playerBoardPiece) => {
 
 const gameBoard = (() => {
     let isGameFinished = false;
+    let hasAi = false;
     let currentTurn = null;
     let board = [];
     let _players = [];
 
     //Private
-    function _addPlayer(playerName, playerBoardPiece) {
+    function _addPlayer(playerName, playerBoardPiece, isAi) {
         if (_players.length >= 2) return;
-        _players.push(Player(playerName, playerBoardPiece));
+        _players.push(Player(playerName, playerBoardPiece, isAi));
     }
 
     function _checkLine(startPos, stepsPos, distance = board.length) {
@@ -50,8 +55,13 @@ const gameBoard = (() => {
 
     //Public
     function createPlayers(firstPlayer, secondPlayer = 'AI') {
-        _addPlayer(firstPlayer, 'CROSS');
-        _addPlayer(secondPlayer, 'CIRCLE');
+        _addPlayer(firstPlayer, 'CROSS'); //first player
+        if (hasAi) { //second player / ai check
+            const isAi = true;
+            _addPlayer('Ai', 'CIRCLE', isAi);
+        } else {
+            _addPlayer(secondPlayer, 'CIRCLE');
+        }
         currentTurn = _players[0]; //CROSS or P1 goes first
 
         console.log(`Player 1: ${_players[0].getPlayerName()}`);
@@ -60,6 +70,7 @@ const gameBoard = (() => {
 
     function resetBoardAll() {
         isGameFinished = false;
+        hasAi = false;
         currentTurn = null;
         board = [];
         _players = [];
@@ -104,15 +115,24 @@ const gameBoard = (() => {
     }
 
 
+    function aiChoice() {
+        //picking at random / overwriting user
+        changeBoardValue(Math.floor(Math.random() * board.length), 'CIRCLE');
+    }
+
+
     return {
         getCurrentTurn: () => { return currentTurn },
         getBoard: () => { return board },
         getIsGameFinished: () => { return isGameFinished },
+        isAiEnabled: () => { return hasAi },
+        setHasAi: (value) => { hasAi = value },
         createPlayers,
         resetBoardAll,
         changeBoardValue,
         switchCurrentTurn,
         checkWinState,
+        aiChoice,
     }
 })();
 
@@ -153,15 +173,28 @@ const displayController = (() => {
         const currentPiece = gameBoard.getCurrentTurn().getPlayerBoardPiece();
         if (gameBoard.getBoard()[targetIndex] !== null) return; //avoid overwriting cells
 
+        //user turn
         gameBoard.changeBoardValue(targetIndex, currentPiece);
 
         displayBoard();
-        if (gameBoard.checkWinState()) {
+        if (gameBoard.checkWinState()) { //check win
             _displayPlayerWin();
             return
         }
         gameBoard.switchCurrentTurn();
         _displayTurn();
+
+        //ai check & ai turn
+        if (gameBoard.isAiEnabled() && gameBoard.getCurrentTurn().getIsAi()) {
+            gameBoard.aiChoice();
+            displayBoard();
+            if (gameBoard.checkWinState()) { //check win
+                _displayPlayerWin();
+                return
+            }
+            gameBoard.switchCurrentTurn();
+            _displayTurn();
+        }
     }
 
     function _displayPlayerWin() {
@@ -176,6 +209,7 @@ const displayController = (() => {
         if (playerOneName !== '' && cpuToggle) {
             //with AI
             resetDisplayBoardAll(); //has to be inside so it wouldn't trigger during else condition
+            gameBoard.setHasAi(true);
             gameBoard.createPlayers(playerOneName);
         } else if (playerOneName !== '' && playerTwoName !== '' && !cpuToggle) {
             //without AI / PvP
