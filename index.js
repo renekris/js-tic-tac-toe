@@ -120,6 +120,27 @@ const gameBoard = (() => {
         changeBoardValue(Math.floor(Math.random() * board.length), 'CIRCLE');
     }
 
+    function minimax(node, depth, isMaximizingPlayer) {
+        if (depth === 0) {
+            return node;
+        }
+        if (isMaximizingPlayer) {
+            let maxEval = Number.NEGATIVE_INFINITY;
+            node.forEach(child => {
+                maxEval = Math.max(maxEval, minimax(child, depth - 1, false));
+                console.log(`bottom- child: ${child} | depth: ${depth} | maxEval: ${maxEval}`)
+            })
+            return maxEval;
+        } else {
+            let minEval = Number.POSITIVE_INFINITY;
+            node.forEach(child => {
+                minEval = Math.min(minEval, minimax(child, depth - 1, true))
+                console.log(`bottom- child: ${child} | depth: ${depth} | minEval: ${minEval}`)
+            })
+            return minEval;
+        }
+    }
+
 
     return {
         getCurrentTurn: () => { return currentTurn },
@@ -133,6 +154,7 @@ const gameBoard = (() => {
         switchCurrentTurn,
         checkWinState,
         aiChoice,
+        minimax,
     }
 })();
 
