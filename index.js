@@ -26,7 +26,7 @@ const gameBoard = (() => {
     let isGameFinished = false;
     let hasAi = false;
     let currentTurn = null;
-    let board = [];
+    let board = [0, 1, 2, 3, 4, 5, 6, 7, 8];
     let _players = [];
 
     //Private
@@ -55,29 +55,21 @@ const gameBoard = (() => {
 
     //Public
     function createPlayers(firstPlayer, secondPlayer = 'AI') {
-        _addPlayer(firstPlayer, 'CROSS'); //first player
-        if (hasAi) { //second player / ai check
-            const isAi = true;
-            _addPlayer('Ai', 'CIRCLE', isAi);
-        } else {
-            _addPlayer(secondPlayer, 'CIRCLE');
-        }
-        currentTurn = _players[0]; //CROSS or P1 goes first
+        _addPlayer(firstPlayer, 'X'); //first player
+        hasAi ? _addPlayer('Ai', 'C', true) : _addPlayer(secondPlayer, 'C');
+
+        currentTurn = _players[0]; //X or P1 goes first
 
         console.log(`Player 1: ${_players[0].getPlayerName()}`);
         console.log(`Player 2: ${_players[1].getPlayerName()}`);
     }
 
-    function resetBoardAll() {
+    function resetBoardData() {
         isGameFinished = false;
         hasAi = false;
         currentTurn = null;
-        board = [];
+        board = [0, 1, 2, 3, 4, 5, 6, 7, 8];
         _players = [];
-
-        while (board.length < 9) {
-            board.push(null);
-        }
     }
 
     function changeBoardValue(index, value) {
@@ -93,31 +85,34 @@ const gameBoard = (() => {
     }
 
     function checkWinState() {
-        const linePatterns = [[0, 3], [1, 3], [2, 3], [0, 1, 3], [3, 1, 3], [6, 1, 3], [0, 4], [2, 2, 5]];
+        const currentPiece = currentTurn.getPlayerBoardPiece();
 
-        //// Different patterns
-        // _checkLine(0, 3); //left top -> bottom | OK
-        // _checkLine(1, 3); //mid top -> bottom | OK
-        // _checkLine(2, 3); //right top -> bottom | OK
-        // _checkLine(0, 1, 3); //top left -> top right - OK
-        // _checkLine(3, 1, 3); //mid left -> mid right - OK
-        // _checkLine(6, 1, 3); //bottom left -> bottom right - OK
-        // _checkLine(0, 4); //left top -> bottom right \ OK
-        // _checkLine(2, 2, 5); //right top -> bottom left / OK
-
-        console.clear();
-        for (let i = 0; i < linePatterns.length; i++) {
-            if (_checkLine(...linePatterns[i])) {
-                isGameFinished = true;
-                return true;
-            }
-        }
+        // array for debugging
+        // 0 1 2
+        // 3 4 5
+        // 6 7 8
+        if (
+            (currentPiece === board[0] && currentPiece === board[1] && currentPiece === board[2]) ||
+            (currentPiece === board[3] && currentPiece === board[4] && currentPiece === board[5]) ||
+            (currentPiece === board[6] && currentPiece === board[7] && currentPiece === board[8]) ||
+            (currentPiece === board[0] && currentPiece === board[3] && currentPiece === board[6]) ||
+            (currentPiece === board[1] && currentPiece === board[4] && currentPiece === board[7]) ||
+            (currentPiece === board[2] && currentPiece === board[5] && currentPiece === board[8]) ||
+            (currentPiece === board[0] && currentPiece === board[4] && currentPiece === board[8]) ||
+            (currentPiece === board[2] && currentPiece === board[4] && currentPiece === board[6])
+        ) {
+            console.clear();
+            console.log(`${currentTurn.getPlayerName()} is the winner!`)
+            isGameFinished = true;
+            return true;
+        } else
+            return false;
     }
 
 
     function aiChoice() {
         //picking at random / overwriting user
-        changeBoardValue(Math.floor(Math.random() * board.length), 'CIRCLE');
+        changeBoardValue(Math.floor(Math.random() * board.length), 'C');
     }
 
     function minimax(node, depth, isMaximizingPlayer) {
@@ -149,7 +144,7 @@ const gameBoard = (() => {
         isAiEnabled: () => { return hasAi },
         setHasAi: (value) => { hasAi = value },
         createPlayers,
-        resetBoardAll,
+        resetBoardData,
         changeBoardValue,
         switchCurrentTurn,
         checkWinState,
@@ -170,19 +165,12 @@ const displayController = (() => {
     elMenuForm.addEventListener('submit', _menuFormSubmit);
     elCpuToggle.addEventListener('change', _checkToggle);
 
-    //Init
-    // function init() {
-    //     gameBoard.createBoard();
-    //     displayBoard();
-    // }
-
     //Private
     function _checkToggle(e) {
         e.target.checked ? e.target.form[1].disabled = true : e.target.form[1].disabled = false;
-        e.target.checked ? e.target.form[1].disabled = true : e.target.form[1].disabled = false;
     }
 
-    function _displayTurn() {
+    function _displayCurrentTurn() {
         elCurrentTurn.innerHTML = '';
         const p = document.createElement('p');
         p.textContent = `${gameBoard.getCurrentTurn().getPlayerName()}'s turn`;
@@ -190,33 +178,30 @@ const displayController = (() => {
     }
 
     function _clickUpdateValue(e) {
-        if (gameBoard.getIsGameFinished()) return;
         const targetIndex = e.target.parentElement.dataset.index;
         const currentPiece = gameBoard.getCurrentTurn().getPlayerBoardPiece();
-        if (gameBoard.getBoard()[targetIndex] !== null) return; //avoid overwriting cells
+        if (!Number.isInteger(gameBoard.getBoard()[targetIndex]) || gameBoard.getIsGameFinished())
+            return; //avoid overwriting cells & check finished
 
-        //user turn
-        gameBoard.changeBoardValue(targetIndex, currentPiece);
+        //user
+        _makeTurn(targetIndex, currentPiece);
 
-        displayBoard();
-        if (gameBoard.checkWinState()) { //check win
+        //ai
+        if (gameBoard.isAiEnabled()) {
+            _makeTurn(targetIndex, currentPiece);
+        }
+    }
+
+    function _makeTurn(targetIndex, currentPiece) {
+        gameBoard.getCurrentTurn().getIsAi() ? gameBoard.aiChoice() : gameBoard.changeBoardValue(targetIndex, currentPiece);
+
+        _drawBoard();
+        if (gameBoard.checkWinState()) {
             _displayPlayerWin();
             return
         }
         gameBoard.switchCurrentTurn();
-        _displayTurn();
-
-        //ai check & ai turn
-        if (gameBoard.isAiEnabled() && gameBoard.getCurrentTurn().getIsAi()) {
-            gameBoard.aiChoice();
-            displayBoard();
-            if (gameBoard.checkWinState()) { //check win
-                _displayPlayerWin();
-                return
-            }
-            gameBoard.switchCurrentTurn();
-            _displayTurn();
-        }
+        _displayCurrentTurn();
     }
 
     function _displayPlayerWin() {
@@ -230,12 +215,12 @@ const displayController = (() => {
 
         if (playerOneName !== '' && cpuToggle) {
             //with AI
-            resetDisplayBoardAll(); //has to be inside so it wouldn't trigger during else condition
+            _resetDisplayBoardAll(); //has to be inside so it wouldn't trigger during else condition
             gameBoard.setHasAi(true);
             gameBoard.createPlayers(playerOneName);
         } else if (playerOneName !== '' && playerTwoName !== '' && !cpuToggle) {
             //without AI / PvP
-            resetDisplayBoardAll();
+            _resetDisplayBoardAll();
             gameBoard.createPlayers(playerOneName, playerTwoName);
         } else {
             console.log('%cPlease enter required data', 'color:red')
@@ -244,19 +229,20 @@ const displayController = (() => {
 
 
         e.target.classList.add('hidden'); //turn to modal
-        _displayTurn();
+        _displayCurrentTurn();
     }
 
     function _drawBoard() {
+        elGameBoard.innerHTML = '';
         let index = 0;
         gameBoard.getBoard().forEach(value => {
             const elMainDiv = document.createElement('div');
             const elImageDiv = document.createElement('div');
             elImageDiv.addEventListener('pointerup', _clickUpdateValue);
-            if (value === 'CROSS') {
-                elMainDiv.classList.add('cross');
-            } else if (value === 'CIRCLE') {
-                elMainDiv.classList.add('circle');
+            if (value === 'X') {
+                elMainDiv.classList.add('X');
+            } else if (value === 'C') {
+                elMainDiv.classList.add('C');
             }
             elMainDiv.dataset.index = index++;
             elMainDiv.append(elImageDiv);
@@ -264,17 +250,13 @@ const displayController = (() => {
         })
     }
 
-    //Public
-    function displayBoard() {
-        elGameBoard.innerHTML = '';
+    function _resetDisplayBoardAll() {
+        gameBoard.resetBoardData();
         _drawBoard();
     }
 
+    //Public
 
-    function resetDisplayBoardAll() {
-        gameBoard.resetBoardAll();
-        displayBoard();
-    }
 
     return {
     }

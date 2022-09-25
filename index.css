@@ -82,16 +82,16 @@
     height: 100%;
 }
 
-.cross div {
+.X div {
     background: url(./svg/cross.svg) no-repeat;
 }
 
-.circle div {
+.C div {
     background: url(./svg/circle.svg) no-repeat;
 }
 
-.cross div,
-.circle div {
+.X div,
+.C div {
     background-size: contain;
     width: 100%;
     height: 100%;
