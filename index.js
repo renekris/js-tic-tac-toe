@@ -27,6 +27,7 @@ const gameBoard = (() => {
     let hasAi = false;
     let currentTurn = null;
     let originalBoard = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+    let currentRound = 0;
     let _players = [];
 
     //Private
@@ -51,11 +52,23 @@ const gameBoard = (() => {
         hasAi = false;
         currentTurn = null;
         originalBoard = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+        currentRound = 0;
         _players = [];
     }
 
     function changeBoardValue(index, value) {
+        if (currentRound > 8) { // hard restrict on changing values
+            isGameFinished = true;
+            return
+        }
+
+        currentRound++;
+        console.log(`Current round: ${currentRound}`)
         originalBoard[index] = value;
+
+        if (gameBoard.checkWinState(gameBoard.getOriginalBoard())) {
+            isGameFinished = true;
+        }
     }
 
     function switchCurrentTurn() {
@@ -88,6 +101,7 @@ const gameBoard = (() => {
     }
 
     function aiChoice() {
+        if (isGameFinished === true) return; //keeps ai from doing unnecessary work
         const pieceAi = _players[1].getPlayerBoardPiece();
         const minimaxChoice = minimax(originalBoard, pieceAi);
         changeBoardValue(minimaxChoice.index, 'O');
@@ -130,7 +144,7 @@ const gameBoard = (() => {
         }
 
         let bestMove;
-        if (player === pieceAi) {
+        if (player === pieceAi) { //maximizing AI
             let bestScore = Number.NEGATIVE_INFINITY;
             for (let i = 0; i < moves.length; i++) {
                 if (moves[i].score > bestScore) {
@@ -149,32 +163,12 @@ const gameBoard = (() => {
         }
 
         return moves[bestMove];
-
-        // if (depth === 0) {
-        //     return node;
-        // }
-        // if (isMaximizingPlayer) {
-        //     let maxEval = Number.NEGATIVE_INFINITY;
-        //     node.forEach(child => {
-        //         maxEval = Math.max(maxEval, minimax(child, depth - 1, false));
-        //         console.log(`bottom- child: ${child} | depth: ${depth} | maxEval: ${maxEval}`)
-        //     })
-        //     return maxEval;
-        // } else {
-        //     let minEval = Number.POSITIVE_INFINITY;
-        //     node.forEach(child => {
-        //         minEval = Math.min(minEval, minimax(child, depth - 1, true))
-        //         console.log(`bottom- child: ${child} | depth: ${depth} | minEval: ${minEval}`)
-        //     })
-        //     return minEval;
-        // }
     }
 
     return {
         getCurrentTurn: () => { return currentTurn },
         getOriginalBoard: () => { return originalBoard },
         getIsGameFinished: () => { return isGameFinished },
-        setIsGameFinished: (value) => { isGameFinished = value },
         isAiEnabled: () => { return hasAi },
         setHasAi: (value) => { hasAi = value },
         createPlayers,
@@ -226,21 +220,23 @@ const displayController = (() => {
         }
     }
 
-    function _makeTurn(targetIndex, currentPiece) {
-        gameBoard.getCurrentTurn().getIsAi() ? gameBoard.aiChoice() : gameBoard.changeBoardValue(targetIndex, currentPiece);
+    async function _makeTurn(targetIndex, currentPiece) {
+        if (gameBoard.getCurrentTurn().getIsAi()) {
+            //artificial wait on AI to make it seem more "human"
+            await new Promise(r => setTimeout(r, Math.floor(Math.random() * 800)));
+            gameBoard.aiChoice();
+        } else {
+            gameBoard.changeBoardValue(targetIndex, currentPiece);
+        }
 
         _drawBoard();
-        if (gameBoard.checkWinState(gameBoard.getOriginalBoard())) {
-            _displayPlayerWin();
-            return
+        if (gameBoard.getIsGameFinished()) {
+            //Add here game-board update on ui
+            console.log(`Winner: ${gameBoard.getCurrentTurn().getPlayerName()}`)
+        } else {
+            gameBoard.switchCurrentTurn();
+            _displayCurrentTurn();
         }
-        gameBoard.switchCurrentTurn();
-        _displayCurrentTurn();
-    }
-
-    function _displayPlayerWin() {
-        console.log(`${gameBoard.getCurrentTurn().getPlayerName()} is the winner!`)
-        gameBoard.setIsGameFinished(true);
     }
 
     function _menuFormSubmit(e) {
@@ -286,6 +282,7 @@ const displayController = (() => {
     }
 
     function _resetDisplayBoardAll() {
+        console.clear();
         gameBoard.resetBoardData();
         _drawBoard();
     }

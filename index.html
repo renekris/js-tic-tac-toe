@@ -11,7 +11,7 @@
     <body>
         <div id="container">
             <div id="menu-display">
-                <form action="javascript:(null);" method="post" id="menu-form">
+                <form action="javascript:(0);" method="post" id="menu-form">
                     <label for="player-one">
                         Player one:
                         <input
@@ -19,6 +19,7 @@
                             name="playerOne"
                             id="player-one"
                             value="Renekris"
+                            spellcheck="false"
                         />
                     </label>
                     <label for="player-two">
@@ -28,15 +29,11 @@
                             name="playerTwo"
                             id="player-two"
                             value="Player 2"
+                            spellcheck="false"
                         />
                     </label>
                     <label for="with-ai">
-                        <input
-                            type="checkbox"
-                            name="twoPlayer"
-                            id="with-ai"
-                            checked
-                        />
+                        <input type="checkbox" name="twoPlayer" id="with-ai" />
                         Player vs CPU
                     </label>
                     <button type="submit">Start Game</button>

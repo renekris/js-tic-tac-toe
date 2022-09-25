@@ -37,9 +37,23 @@
 
 #menu-form label {
     display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
 }
+
+#menu-form label[for="with-ai"] {
+    flex-direction: row;
+}
+
 #menu-form input[type="text"] {
     flex: 1;
+    font-family: monospace;
+}
+
+#menu-form input[type="checkbox"] {
+    margin-right: 1rem;
+    margin-left: -1rem;
 }
 
 #menu-form button {
@@ -47,9 +61,13 @@
     background-color: black;
     border: none;
     padding: 1rem;
+    font-family: monospace;
 }
 
 #current-turn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     margin: 1rem 0 2rem 0;
 }
 
@@ -97,5 +115,5 @@
     height: 100%;
     aspect-ratio: 1 / 1;
 
-    filter: drop-shadow(0 0 10px rgb(55 55 110 / 1));
+    filter: drop-shadow(0 0 5px rgb(55 55 110 / 0.5));
 }
