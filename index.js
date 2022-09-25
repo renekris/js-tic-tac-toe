@@ -26,7 +26,7 @@ const gameBoard = (() => {
     let isGameFinished = false;
     let hasAi = false;
     let currentTurn = null;
-    let board = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+    let originalBoard = [0, 1, 2, 3, 4, 5, 6, 7, 8];
     let _players = [];
 
     //Private
@@ -35,28 +35,10 @@ const gameBoard = (() => {
         _players.push(Player(playerName, playerBoardPiece, isAi));
     }
 
-    function _checkLine(startPos, stepsPos, distance = board.length) {
-        let pieceArray = [];
-        for (let i = startPos; i < startPos + distance; i += stepsPos) {
-            const element = board[i];
-            if (element !== null) {
-                pieceArray.push(element);
-            }
-        }
-        if (pieceArray.length >= 3) {
-            if (pieceArray.every(val => val === pieceArray[0])) {
-                console.log('WIN!')
-                return true;
-            } else {
-                return false;
-            }
-        }
-    }
-
     //Public
     function createPlayers(firstPlayer, secondPlayer = 'AI') {
         _addPlayer(firstPlayer, 'X'); //first player
-        hasAi ? _addPlayer('Ai', 'C', true) : _addPlayer(secondPlayer, 'C');
+        hasAi ? _addPlayer('Ai', 'O', true) : _addPlayer(secondPlayer, 'O');
 
         currentTurn = _players[0]; //X or P1 goes first
 
@@ -68,12 +50,12 @@ const gameBoard = (() => {
         isGameFinished = false;
         hasAi = false;
         currentTurn = null;
-        board = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+        originalBoard = [0, 1, 2, 3, 4, 5, 6, 7, 8];
         _players = [];
     }
 
     function changeBoardValue(index, value) {
-        board[index] = value;
+        originalBoard[index] = value;
     }
 
     function switchCurrentTurn() {
@@ -84,8 +66,7 @@ const gameBoard = (() => {
             : currentTurn = playerOne;
     }
 
-    function checkWinState() {
-        const currentPiece = currentTurn.getPlayerBoardPiece();
+    function checkWinState(board, currentPiece = currentTurn.getPlayerBoardPiece()) {
 
         // array for debugging
         // 0 1 2
@@ -101,46 +82,99 @@ const gameBoard = (() => {
             (currentPiece === board[0] && currentPiece === board[4] && currentPiece === board[8]) ||
             (currentPiece === board[2] && currentPiece === board[4] && currentPiece === board[6])
         ) {
-            console.clear();
-            console.log(`${currentTurn.getPlayerName()} is the winner!`)
-            isGameFinished = true;
             return true;
         } else
             return false;
     }
 
-
     function aiChoice() {
-        //picking at random / overwriting user
-        changeBoardValue(Math.floor(Math.random() * board.length), 'C');
+        const pieceAi = _players[1].getPlayerBoardPiece();
+        const minimaxChoice = minimax(originalBoard, pieceAi);
+        changeBoardValue(minimaxChoice.index, 'O');
     }
 
-    function minimax(node, depth, isMaximizingPlayer) {
-        if (depth === 0) {
-            return node;
+    function minimax(currentBoard, player) {
+        const pieceHuman = _players[0].getPlayerBoardPiece();
+        const pieceAi = _players[1].getPlayerBoardPiece();
+        let freeSpaces = currentBoard.filter(s => s != 'O' && s != 'X');
+
+
+        if (checkWinState(currentBoard, pieceHuman)) { //human win
+            return { score: -10 }
         }
-        if (isMaximizingPlayer) {
-            let maxEval = Number.NEGATIVE_INFINITY;
-            node.forEach(child => {
-                maxEval = Math.max(maxEval, minimax(child, depth - 1, false));
-                console.log(`bottom- child: ${child} | depth: ${depth} | maxEval: ${maxEval}`)
-            })
-            return maxEval;
+        else if (checkWinState(currentBoard, pieceAi)) { //ai win
+            return { score: 10 }
+        }
+        else if (freeSpaces.length === 0) { //draw
+            return { score: 0 }
+        }
+
+        let moves = [];
+        for (let i = 0; i < freeSpaces.length; i++) {
+            let move = {};
+            move.index = currentBoard[freeSpaces[i]];
+            currentBoard[freeSpaces[i]] = player;
+
+            if (player == pieceAi) {
+                let result = minimax(currentBoard, pieceHuman);
+                move.score = result.score;
+            }
+            else {
+                let result = minimax(currentBoard, pieceAi);
+                move.score = result.score;
+            }
+
+            currentBoard[freeSpaces[i]] = move.index;
+
+            moves.push(move);
+        }
+
+        let bestMove;
+        if (player === pieceAi) {
+            let bestScore = Number.NEGATIVE_INFINITY;
+            for (let i = 0; i < moves.length; i++) {
+                if (moves[i].score > bestScore) {
+                    bestScore = moves[i].score;
+                    bestMove = i;
+                }
+            }
         } else {
-            let minEval = Number.POSITIVE_INFINITY;
-            node.forEach(child => {
-                minEval = Math.min(minEval, minimax(child, depth - 1, true))
-                console.log(`bottom- child: ${child} | depth: ${depth} | minEval: ${minEval}`)
-            })
-            return minEval;
+            let bestScore = Number.POSITIVE_INFINITY;
+            for (let i = 0; i < moves.length; i++) {
+                if (moves[i].score < bestScore) {
+                    bestScore = moves[i].score;
+                    bestMove = i;
+                }
+            }
         }
-    }
 
+        return moves[bestMove];
+
+        // if (depth === 0) {
+        //     return node;
+        // }
+        // if (isMaximizingPlayer) {
+        //     let maxEval = Number.NEGATIVE_INFINITY;
+        //     node.forEach(child => {
+        //         maxEval = Math.max(maxEval, minimax(child, depth - 1, false));
+        //         console.log(`bottom- child: ${child} | depth: ${depth} | maxEval: ${maxEval}`)
+        //     })
+        //     return maxEval;
+        // } else {
+        //     let minEval = Number.POSITIVE_INFINITY;
+        //     node.forEach(child => {
+        //         minEval = Math.min(minEval, minimax(child, depth - 1, true))
+        //         console.log(`bottom- child: ${child} | depth: ${depth} | minEval: ${minEval}`)
+        //     })
+        //     return minEval;
+        // }
+    }
 
     return {
         getCurrentTurn: () => { return currentTurn },
-        getBoard: () => { return board },
+        getOriginalBoard: () => { return originalBoard },
         getIsGameFinished: () => { return isGameFinished },
+        setIsGameFinished: (value) => { isGameFinished = value },
         isAiEnabled: () => { return hasAi },
         setHasAi: (value) => { hasAi = value },
         createPlayers,
@@ -180,7 +214,7 @@ const displayController = (() => {
     function _clickUpdateValue(e) {
         const targetIndex = e.target.parentElement.dataset.index;
         const currentPiece = gameBoard.getCurrentTurn().getPlayerBoardPiece();
-        if (!Number.isInteger(gameBoard.getBoard()[targetIndex]) || gameBoard.getIsGameFinished())
+        if (!Number.isInteger(gameBoard.getOriginalBoard()[targetIndex]) || gameBoard.getIsGameFinished())
             return; //avoid overwriting cells & check finished
 
         //user
@@ -196,7 +230,7 @@ const displayController = (() => {
         gameBoard.getCurrentTurn().getIsAi() ? gameBoard.aiChoice() : gameBoard.changeBoardValue(targetIndex, currentPiece);
 
         _drawBoard();
-        if (gameBoard.checkWinState()) {
+        if (gameBoard.checkWinState(gameBoard.getOriginalBoard())) {
             _displayPlayerWin();
             return
         }
@@ -205,7 +239,8 @@ const displayController = (() => {
     }
 
     function _displayPlayerWin() {
-        elCurrentTurn.textContent = `Winner of this game is: ${gameBoard.getCurrentTurn().getPlayerName()}!`;
+        console.log(`${gameBoard.getCurrentTurn().getPlayerName()} is the winner!`)
+        gameBoard.setIsGameFinished(true);
     }
 
     function _menuFormSubmit(e) {
@@ -235,14 +270,14 @@ const displayController = (() => {
     function _drawBoard() {
         elGameBoard.innerHTML = '';
         let index = 0;
-        gameBoard.getBoard().forEach(value => {
+        gameBoard.getOriginalBoard().forEach(value => {
             const elMainDiv = document.createElement('div');
             const elImageDiv = document.createElement('div');
             elImageDiv.addEventListener('pointerup', _clickUpdateValue);
             if (value === 'X') {
                 elMainDiv.classList.add('X');
-            } else if (value === 'C') {
-                elMainDiv.classList.add('C');
+            } else if (value === 'O') {
+                elMainDiv.classList.add('O');
             }
             elMainDiv.dataset.index = index++;
             elMainDiv.append(elImageDiv);
