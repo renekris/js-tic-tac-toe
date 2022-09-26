@@ -192,6 +192,7 @@ const displayController = (() => {
     const elGame = document.getElementById('game');
     const elMenuInfo = document.getElementById('menu-info');
     const elMenuDisplay = document.getElementById('menu-display');
+    const elImageClickEvent = document.getElementsByClassName('image-click-event');
 
     //Bind Events
     elMenuForm.addEventListener('submit', _menuFormSubmit);
@@ -224,16 +225,26 @@ const displayController = (() => {
         }
     }
 
+    function deleteEventListeners() {
+        array = Array.from(elImageClickEvent);
+        console.log(array);
+        for (let i = 0; i < array.length; i++) {
+            const element = array[i];
+            element.removeEventListener('pointerup', _clickUpdateValue);
+        }
+    }
+
     async function _makeTurn(targetIndex, currentPiece) {
         if (gameBoard.getCurrentTurn().getIsAi()) {
             //artificial wait on AI to make it seem more "human"
-            await new Promise(r => setTimeout(r, Math.floor(Math.random() * 800)));
+            deleteEventListeners(); //so the player couldn't spam cells while async await running
+            await new Promise(r => setTimeout(r, Math.floor(Math.random() * 1000)));
             gameBoard.aiChoice();
         } else {
             gameBoard.changeBoardValue(targetIndex, currentPiece);
         }
-
         _drawBoard();
+
         if (gameBoard.checkWinState(gameBoard.getOriginalBoard()) === false && gameBoard.getCurrentRound() > 8) {
             _displayText(elCurrentTurn, `Draw!`);
             await new Promise(r => setTimeout(r, 2000));
@@ -285,6 +296,7 @@ const displayController = (() => {
             const elMainDiv = document.createElement('div');
             const elImageDiv = document.createElement('div');
             elImageDiv.addEventListener('pointerup', _clickUpdateValue);
+            elImageDiv.classList.add('image-click-event');
             if (value === 'X') {
                 elMainDiv.classList.add('X');
             } else if (value === 'O') {
