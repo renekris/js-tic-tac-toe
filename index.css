@@ -63,19 +63,18 @@
     font-family: monospace;
 
     border: 0 solid black;
-    transition: 0.05s ease;
 }
 
 #menu-form button:hover,
 #menu-form button:focus,
 #menu-form button:active {
+    transition: 0.05s ease;
     border: 0.25rem solid black;
 }
 
 /* hidden class transitions */
 
-#menu-display,
-#game {
+.shown {
     position: absolute;
     visibility: visible;
     z-index: 100;
@@ -113,8 +112,8 @@
 }
 
 #game-board > div {
-    width: 10rem;
-    height: 10rem;
+    min-width: 8rem;
+    min-height: 8rem;
 }
 
 #game-board > div:nth-child(-n + 6) {
@@ -142,9 +141,6 @@
 .X div,
 .O div {
     background-size: contain;
-    width: 100%;
-    height: 100%;
-    aspect-ratio: 1 / 1;
 
     filter: drop-shadow(0 0 5px rgb(55 55 110 / 0.5));
 }
