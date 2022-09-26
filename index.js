@@ -62,9 +62,9 @@ const gameBoard = (() => {
             return
         }
 
+        originalBoard[index] = value;
         currentRound++;
         console.log(`Current round: ${currentRound}`)
-        originalBoard[index] = value;
 
         if (gameBoard.checkWinState(gameBoard.getOriginalBoard())) {
             isGameFinished = true;
@@ -171,6 +171,7 @@ const gameBoard = (() => {
         getIsGameFinished: () => { return isGameFinished },
         isAiEnabled: () => { return hasAi },
         setHasAi: (value) => { hasAi = value },
+        getCurrentRound: () => { return currentRound },
         createPlayers,
         resetBoardData,
         changeBoardValue,
@@ -188,6 +189,9 @@ const displayController = (() => {
     const elMenuForm = document.getElementById('menu-form');
     const elCpuToggle = document.getElementById('with-ai');
     const elCurrentTurn = document.getElementById('current-turn');
+    const elGame = document.getElementById('game');
+    const elMenuInfo = document.getElementById('menu-info');
+    const elMenuDisplay = document.getElementById('menu-display');
 
     //Bind Events
     elMenuForm.addEventListener('submit', _menuFormSubmit);
@@ -198,11 +202,11 @@ const displayController = (() => {
         e.target.checked ? e.target.form[1].disabled = true : e.target.form[1].disabled = false;
     }
 
-    function _displayCurrentTurn() {
-        elCurrentTurn.innerHTML = '';
+    function _displayText(element, text) {
+        element.innerHTML = '';
         const p = document.createElement('p');
-        p.textContent = `${gameBoard.getCurrentTurn().getPlayerName()}'s turn`;
-        elCurrentTurn.append(p);
+        p.textContent = text;
+        element.append(p);
     }
 
     function _clickUpdateValue(e) {
@@ -230,16 +234,25 @@ const displayController = (() => {
         }
 
         _drawBoard();
-        if (gameBoard.getIsGameFinished()) {
-            //Add here game-board update on ui
-            console.log(`Winner: ${gameBoard.getCurrentTurn().getPlayerName()}`)
+        if (gameBoard.checkWinState(gameBoard.getOriginalBoard()) === false && gameBoard.getCurrentRound() > 8) {
+            _displayText(elCurrentTurn, `Draw!`);
+            await new Promise(r => setTimeout(r, 2000));
+            elMenuDisplay.classList.remove('hidden');
+            elGame.classList.add('hidden');
+        } else if (gameBoard.checkWinState(gameBoard.getOriginalBoard())) {
+            _displayText(elCurrentTurn, `Winner: ${gameBoard.getCurrentTurn().getPlayerName()}!`);
+            await new Promise(r => setTimeout(r, 2000));
+            elMenuDisplay.classList.remove('hidden');
+            elGame.classList.add('hidden');
         } else {
             gameBoard.switchCurrentTurn();
-            _displayCurrentTurn();
+            _displayText(elCurrentTurn, `${gameBoard.getCurrentTurn().getPlayerName()}'s turn`);
         }
     }
 
     function _menuFormSubmit(e) {
+        e.preventDefault();
+        _resetDisplayBoardAll();
         const playerOneName = e.target[0].value;
         const playerTwoName = e.target[1].value;
         const cpuToggle = e.target[2].checked;
@@ -254,13 +267,15 @@ const displayController = (() => {
             _resetDisplayBoardAll();
             gameBoard.createPlayers(playerOneName, playerTwoName);
         } else {
-            console.log('%cPlease enter required data', 'color:red')
-            return
+            console.log('%cPlease enter required data', 'color:red');
+            _displayText(elMenuInfo, `Please enter the missing data`);
+            return;
         }
 
 
-        e.target.classList.add('hidden'); //turn to modal
-        _displayCurrentTurn();
+        elMenuDisplay.classList.add('hidden');
+        elGame.classList.remove('hidden');
+        _displayText(elCurrentTurn, `${gameBoard.getCurrentTurn().getPlayerName()}'s turn`);
     }
 
     function _drawBoard() {
@@ -286,14 +301,4 @@ const displayController = (() => {
         gameBoard.resetBoardData();
         _drawBoard();
     }
-
-    //Public
-
-
-    return {
-    }
-})();
-
-const scoreBoard = (() => {
-
 })();
